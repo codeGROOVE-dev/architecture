@@ -9,11 +9,10 @@ All services run on **Google Cloud Run**. GitHub webhooks → Sprinkler → WebS
 ## System Architecture
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph External["External Systems"]
         GH["GitHub API"]
         WHooks["GitHub Webhooks"]
-        Users["End Users"]
     end
 
     subgraph GCR["Google Cloud Run - Public Services"]
@@ -47,11 +46,10 @@ graph TB
 
     TurnServer -->|GitHub API<br/>on cache miss| GH
 
-    Users -->|HTTPS| Dashboard
+    Browser -->|HTTPS| Dashboard
     Dashboard -->|HTTPS API| TurnServer
-    Dashboard -->|Render| Browser
 
-    Users -->|Search Queries<br/>Direct| GH
+    Browser -->|Search Queries<br/>Direct| GH
 
     Goose -->|Notify| Desktop
     Slacker -->|Post| Slack
@@ -61,7 +59,7 @@ graph TB
     classDef cloudflare fill:#f4511e,stroke:#bf360c,stroke-width:2px,color:#fff
     classDef client fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
 
-    class GH,WHooks,Users external
+    class GH,WHooks external
     class Sprinkler,ReviewBot,Goose,Slacker,TurnServer cloudrun
     class Dashboard cloudflare
     class Browser,Desktop,Slack client
