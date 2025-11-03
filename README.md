@@ -51,7 +51,7 @@ flowchart TB
     Browser -->|HTTPS| Dashboard
     Dashboard -->|HTTPS API| TurnServer
 
-    Browser -->|Search Queries<br/>Direct| GH
+    Browser -.->|GitHub Search<br/>(not R2R)| GH
 
     Goose -->|Notify| Desktop
     Slacker -->|Post| Slack
@@ -69,9 +69,9 @@ flowchart TB
 
 ## Components
 
-- **Sprinkler:** Webhook receiver with HMAC-SHA256 verification. Broadcasts via WSS to subscribers. Auth via GitHub PAT.
-- **Review-Bot:** PR analysis and reviewer assignment. WebSocket subscriber. Scores candidates by file expertise and workload. Uses GitHub App (JWT + installation tokens).
-- **TurnServer:** Turn calculator + PR metadata cache. Two-tier cache (memory + disk, 21 days). Auth via GitHub PAT.
+- **Sprinkler:** Webhook receiver with HMAC-SHA256 verification. Broadcasts via WSS to subscribers. Auth: GitHub PAT.
+- **Review-Bot:** PR analysis and reviewer assignment. WebSocket subscriber. Scores candidates by file expertise and workload. Auth: GitHub App (JWT + installation tokens).
+- **TurnServer:** Turn calculator + PR metadata cache. Two-tier cache (memory + disk, 21 days). Auth: GitHub PAT.
 - **Goose/Slacker:** Notification services (desktop/Slack). Query TurnServer for data.
 - **Dashboard:** Web UI behind Cloudflare. Queries TurnServer.
 
@@ -104,7 +104,7 @@ sequenceDiagram
 | Data Type | Retention | Location |
 |-----------|-----------|----------|
 | PR metadata | 21 days | TurnServer (memory + disk) |
-| Review-Bot cache | 20 days (metadata), 6h (lists) | Memory |
+| Review-Bot cache | 3 days (metadata), 6h (lists) | Memory |
 | **Source code/diffs** | **Never** | **N/A** |
 | Webhook events | Real-time only | Ephemeral |
 | Auth tokens | Persistent | Encrypted at rest |
@@ -128,6 +128,7 @@ sequenceDiagram
 **GitHub Permissions:**
 - Review-Bot: Repo (read/write), PRs (read/write), Org (read)
 - TurnServer: Repo/PRs/Checks (read)
+- Sprinkler: Org membership (read) for token validation
 
 **Network:**
 - All traffic: HTTPS/WSS (TLS 1.2+)
@@ -137,7 +138,7 @@ sequenceDiagram
 **Trust Boundaries:**
 
 ```mermaid
-graph TB
+flowchart TB
     subgraph "User Controlled"
         Browser["Browser"]
         GooseClient["Goose Client"]
@@ -160,20 +161,20 @@ graph TB
 
     Browser -->|HTTPS| CF
     CF -->|HTTPS| Dashboard
-    Dashboard -->|Auth| TurnServer
+    Dashboard -->|PAT| TurnServer
 
     GitHub -->|Webhook| Sprinkler
-    Sprinkler -->|WSS+Auth| ReviewBot
-    Sprinkler -->|WSS+Auth| Goose
-    Sprinkler -->|WSS+Auth| Slacker
+    Sprinkler -->|WSS+PAT| ReviewBot
+    Sprinkler -->|WSS+PAT| Goose
+    Sprinkler -->|WSS+PAT| Slacker
 
-    ReviewBot -->|OAuth| GitHub
-    TurnServer -->|OAuth| GitHub
+    ReviewBot -->|GitHub App| GitHub
+    TurnServer -->|PAT| GitHub
 
-    Goose -->|Auth| TurnServer
+    Goose -->|PAT| TurnServer
     Goose -->|Notify| GooseClient
 
-    Slacker -->|Auth| TurnServer
+    Slacker -->|PAT| TurnServer
     Slacker -->|OAuth| Slack
 
     classDef user fill:#f9f9f9,stroke:#333,stroke-width:2px
