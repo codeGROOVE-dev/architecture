@@ -69,7 +69,7 @@ flowchart TB
 
 ## Components
 
-- **Sprinkler:** Webhook receiver with HMAC-SHA256 verification. Broadcasts via WSS to subscribers after three-phase auth (token format + rate limiting + GitHub org membership).
+- **Sprinkler:** Webhook receiver with HMAC-SHA256 verification. Broadcasts via WSS to subscribers. Auth via GitHub PAT.
 - **Review-Bot:** PR analysis and reviewer assignment. WebSocket subscriber. Scores candidates by file expertise and workload. Uses GitHub App (JWT + installation tokens).
 - **TurnServer:** Turn calculator + GitHub cache. Two-tier cache (memory + disk, 21 days). Auth via GitHub PAT.
 - **Goose/Slacker:** Notification services (desktop/Slack). Query TurnServer for data.
@@ -122,7 +122,7 @@ sequenceDiagram
 **Authentication:**
 - Review-Bot: GitHub App (JWT + installation tokens, auto-refresh)
 - TurnServer: GitHub PAT
-- Sprinkler: Three-phase (token format → rate limit → GitHub org membership)
+- Sprinkler: GitHub PAT
 - Dashboard: GitHub OAuth
 
 **GitHub Permissions:**
