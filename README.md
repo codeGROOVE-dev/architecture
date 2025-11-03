@@ -2,9 +2,11 @@
 
 ## Overview
 
-All services run on **Google Cloud Run**. GitHub webhooks → Sprinkler → WebSocket broadcast to Review-Bot, Goose, and Slacker. TurnServer caches GitHub metadata (21 days max). Dashboard behind Cloudflare. Built with [ko](https://ko.build/) and [Chainguard Images](https://www.chainguard.dev/chainguard-images).
+Event-driven PR review system running on **Google Cloud Run**. GitHub webhooks flow through Sprinkler's WebSocket broadcast to notification services (Goose, Slacker) and Review-Bot for intelligent reviewer assignment. TurnServer provides turn tracking and caches GitHub metadata. Dashboard served via Cloudflare.
 
-**Security principles:** Never store source code. Cache only PR metadata (21 days). Zero Trust architecture.
+Built with [ko](https://ko.build/) and [Chainguard Images](https://www.chainguard.dev/chainguard-images) for supply chain security.
+
+**Security:** Never store source code. Cache only PR metadata (21 days max). Zero Trust architecture.
 
 ## System Architecture
 
