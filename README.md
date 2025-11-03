@@ -11,16 +11,20 @@ Built with [ko](https://ko.build/) and [Chainguard Images](https://www.chainguar
 ## System Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph External["External Systems"]
-        direction TB
+        direction LR
         GH["GitHub API"]
         WHooks["GitHub Webhooks"]
         Slack["Slack"]
     end
 
+    subgraph CF["Cloudflare"]
+        CFProxy["DDoS Protection"]
+    end
+
     subgraph GCR["Google Cloud Run"]
-        direction TB
+        direction LR
         Sprinkler["Sprinkler<br/><i>Broadcaster</i>"]
         ReviewBot["Review-Bot<br/><i>Assignment</i>"]
         Slacker["Slacker<br/><i>Slack Bot</i>"]
@@ -28,12 +32,8 @@ flowchart LR
         Dashboard["Dashboard<br/><i>Static UI + OAuth</i>"]
     end
 
-    subgraph CF["Cloudflare"]
-        CFProxy["DDoS Protection"]
-    end
-
     subgraph Clients["Clients"]
-        direction TB
+        direction LR
         Browser["Browser"]
         Goose["Goose"]
     end
