@@ -136,51 +136,81 @@ sequenceDiagram
 - Cloud Run: Public endpoints with Google-managed TLS
 - Dashboard: Cloudflare DDoS protection
 
-**Trust Boundaries:**
+**Trust Boundaries & Authentication:**
 
 ```mermaid
 flowchart TB
-    subgraph "User Controlled"
-        Browser["Browser"]
-        Goose["Goose Desktop Client"]
+    subgraph UC["User Controlled"]
+        Browser["Browser<br/><i>PAT: GitHub OAuth or user-provided</i>"]
+        Goose["Goose<br/><i>PAT: from 'gh' CLI</i>"]
     end
 
-    subgraph "Third Party"
-        GitHub["GitHub"]
-        Slack["Slack"]
-        CF["Cloudflare"]
+    subgraph TP["Third Party Services"]
+        GitHub["GitHub API"]
+        Slack["Slack API"]
+        CF["Cloudflare<br/><i>DDoS Protection</i>"]
     end
 
-    subgraph "Our Infrastructure (Cloud Run)"
-        Dashboard["Dashboard"]
-        Sprinkler["Sprinkler"]
-        ReviewBot["Review-Bot"]
-        Slacker["Slacker"]
-        TurnServer["TurnServer"]
+    subgraph OI["Our Infrastructure (Cloud Run)"]
+        Dashboard["Dashboard<br/><i>Static UI (OAuth provider)</i>"]
+        Sprinkler["Sprinkler<br/><i>Validates client PATs</i>"]
+        ReviewBot["Review-Bot<br/><i>GitHub App JWT</i>"]
+        Slacker["Slacker<br/><i>GitHub App JWT</i>"]
+        TurnServer["TurnServer<br/><i>Passthrough (validates nothing)</i>"]
     end
 
-    Browser -->|HTTPS| CF
+    Browser -->|"HTTPS<br/>loads UI"| CF
     CF -->|HTTPS| Dashboard
-    Browser -->|PAT| TurnServer
 
-    GitHub -->|Webhook| Sprinkler
-    Sprinkler -->|WSS+PAT| ReviewBot
-    Sprinkler -->|WSS+PAT| Goose
-    Sprinkler -->|WSS+PAT| Slacker
+    Browser -->|"HTTPS + PAT<br/>(user's GitHub token)"| TurnServer
+    Goose -->|"HTTPS + PAT<br/>(gh CLI token)"| TurnServer
+    Slacker -->|"HTTPS + PAT<br/>(client passes through)"| TurnServer
 
-    ReviewBot -->|GitHub App| GitHub
-    TurnServer -->|PAT| GitHub
+    GitHub -->|"Webhook<br/>(HMAC-SHA256 verified)"| Sprinkler
 
-    Goose -->|PAT| TurnServer
+    Sprinkler -->|"WSS + PAT<br/>(validates org membership)"| ReviewBot
+    Sprinkler -->|"WSS + PAT<br/>(validates org membership)"| Goose
+    Sprinkler -->|"WSS + PAT<br/>(validates org membership)"| Slacker
 
-    Slacker -->|PAT| TurnServer
-    Slacker -->|OAuth| Slack
+    ReviewBot -->|"GitHub App<br/>(JWT + installation token)"| GitHub
+    Slacker -->|"GitHub App<br/>(JWT + installation token)"| GitHub
+    TurnServer -->|"PAT<br/>(passes through from clients)"| GitHub
 
-    classDef user fill:#f9f9f9,stroke:#333,stroke-width:2px
-    classDef third fill:#fff3cd,stroke:#856404,stroke-width:2px
-    classDef ours fill:#d1ecf1,stroke:#0c5460,stroke-width:2px
+    Slacker -->|"Slack OAuth"| Slack
+
+    classDef user fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef third fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef ours fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
 
     class Browser,Goose user
     class GitHub,Slack,CF third
     class Dashboard,Sprinkler,ReviewBot,Slacker,TurnServer ours
 ```
+
+**Key Security Properties:**
+- **TurnServer**:
+  - Zero-trust passthrough - forwards client PATs directly to GitHub API without validation
+  - Per-PAT caching (token hashed with SHA256) isolates cached GitHub data by user
+  - Aggressive caching (21 days) limits potential for API request laundering
+  - CORS protection restricts browser origins
+  - Request body size limits prevent memory exhaustion DoS
+
+- **Sprinkler**:
+  - Validates GitHub PATs on initial WebSocket connection
+  - Checks org membership via GitHub API (`ValidateOrgMembership`)
+  - Connection rate limiting per IP via `ConnectionLimiter`
+  - Only broadcasts PR URLs - no metadata (clients must fetch with fresh credentials)
+
+- **GitHub Apps** (Review-Bot, Slacker):
+  - Use JWT + installation tokens for enhanced security
+  - Review-Bot: Repo/PRs read+write, Org read
+  - Slacker: Repo/PRs/Checks read-only
+
+- **User PATs**:
+  - Browser: GitHub OAuth or user-provided PAT (user controls token, no risk)
+  - Goose: Uses local `gh` CLI token (user's GitHub identity)
+
+- **Webhook Security**:
+  - HMAC-SHA256 signature verification on all incoming webhooks
+  - Failed verifications logged and dropped
+  - Cloud Run provides rate limiting
