@@ -15,12 +15,12 @@ flowchart TB
     subgraph External["External Systems"]
         GH["GitHub API"]
         WHooks["GitHub Webhooks"]
+        Slack["Slack Workspace"]
     end
 
     subgraph GCR["Google Cloud Run - Public Services"]
         Sprinkler["Sprinkler<br/><i>Webhook Receiver & Broadcaster</i>"]
         ReviewBot["Review-Bot<br/><i>PR Analysis & Assignment</i>"]
-        Goose["Goose<br/><i>Local Notifications</i>"]
         Slacker["Slacker<br/><i>Slack Notifications</i>"]
         TurnServer["TurnServer<br/><i>Turn Calculator & PR Metadata Cache</i><br/><small>21-day cache</small>"]
     end
@@ -31,8 +31,7 @@ flowchart TB
 
     subgraph Clients["Client Endpoints"]
         Browser["Web Browser"]
-        Desktop["Desktop Client"]
-        Slack["Slack Workspace"]
+        Goose["Goose Desktop Client"]
     end
 
     WHooks -->|HTTPS| Sprinkler
@@ -52,8 +51,9 @@ flowchart TB
     Dashboard -->|HTTPS API| TurnServer
 
     Browser -.->|GitHub Search| GH
+    Goose -.->|GitHub Search| GH
+    Slacker -.->|GitHub Search| GH
 
-    Goose -->|Notify| Desktop
     Slacker -->|Post| Slack
 
     classDef external fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
@@ -61,10 +61,10 @@ flowchart TB
     classDef cloudflare fill:#f4511e,stroke:#bf360c,stroke-width:2px,color:#fff
     classDef client fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
 
-    class GH,WHooks external
-    class Sprinkler,ReviewBot,Goose,Slacker,TurnServer cloudrun
+    class GH,WHooks,Slack external
+    class Sprinkler,ReviewBot,Slacker,TurnServer cloudrun
     class Dashboard cloudflare
-    class Browser,Desktop,Slack client
+    class Browser,Goose client
 ```
 
 ## Components
