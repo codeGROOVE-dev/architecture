@@ -142,7 +142,7 @@ sequenceDiagram
 flowchart TB
     subgraph "User Controlled"
         Browser["Browser"]
-        GooseClient["Goose Client"]
+        Goose["Goose Desktop Client"]
     end
 
     subgraph "Third Party"
@@ -155,7 +155,6 @@ flowchart TB
         Dashboard["Dashboard"]
         Sprinkler["Sprinkler"]
         ReviewBot["Review-Bot"]
-        Goose["Goose"]
         Slacker["Slacker"]
         TurnServer["TurnServer"]
     end
@@ -173,7 +172,6 @@ flowchart TB
     TurnServer -->|PAT| GitHub
 
     Goose -->|PAT| TurnServer
-    Goose -->|Notify| GooseClient
 
     Slacker -->|PAT| TurnServer
     Slacker -->|OAuth| Slack
@@ -182,7 +180,7 @@ flowchart TB
     classDef third fill:#fff3cd,stroke:#856404,stroke-width:2px
     classDef ours fill:#d1ecf1,stroke:#0c5460,stroke-width:2px
 
-    class Browser,GooseClient user
+    class Browser,Goose user
     class GitHub,Slack,CF third
-    class Dashboard,Sprinkler,ReviewBot,Goose,Slacker,TurnServer ours
+    class Dashboard,Sprinkler,ReviewBot,Slacker,TurnServer ours
 ```
