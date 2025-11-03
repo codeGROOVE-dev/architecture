@@ -51,7 +51,7 @@ flowchart TB
     Browser -->|HTTPS| Dashboard
     Dashboard -->|HTTPS API| TurnServer
 
-    Browser -.->|GitHub Search<br/>(not R2R)| GH
+    Browser -.->|GitHub Search| GH
 
     Goose -->|Notify| Desktop
     Slacker -->|Post| Slack
