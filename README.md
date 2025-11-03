@@ -11,50 +11,51 @@ Built with [ko](https://ko.build/) and [Chainguard Images](https://www.chainguar
 ## System Architecture
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph External["External Systems"]
+        direction TB
         GH["GitHub API"]
         WHooks["GitHub Webhooks"]
-        Slack["Slack Workspace"]
+        Slack["Slack"]
     end
 
-    subgraph GCR["Google Cloud Run - Public Services"]
-        Sprinkler["Sprinkler<br/><i>Webhook Receiver & Broadcaster</i>"]
-        ReviewBot["Review-Bot<br/><i>PR Analysis & Assignment</i>"]
-        Slacker["Slacker<br/><i>Slack Notifications</i>"]
-        TurnServer["TurnServer<br/><i>Turn Calculator & PR Metadata Cache</i><br/><small>21-day cache</small>"]
+    subgraph GCR["Google Cloud Run"]
+        direction TB
+        Sprinkler["Sprinkler<br/><i>Broadcaster</i>"]
+        ReviewBot["Review-Bot<br/><i>Assignment</i>"]
+        Slacker["Slacker<br/><i>Slack Bot</i>"]
+        TurnServer["TurnServer<br/><i>Cache & Turn Tracking</i>"]
     end
 
-    subgraph CF["Cloudflare Protected"]
-        Dashboard["Web Dashboard<br/><i>User Interface</i>"]
+    subgraph CF["Cloudflare"]
+        Dashboard["Dashboard"]
     end
 
-    subgraph Clients["Client Endpoints"]
-        Browser["Web Browser"]
-        Goose["Goose Desktop Client"]
+    subgraph Clients["Clients"]
+        direction TB
+        Browser["Browser"]
+        Goose["Goose"]
     end
 
-    WHooks -->|HTTPS| Sprinkler
+    WHooks -->|Webhook| Sprinkler
 
-    Sprinkler -.->|WebSocket Stream| ReviewBot
-    Sprinkler -.->|WebSocket Stream| Goose
-    Sprinkler -.->|WebSocket Stream| Slacker
+    Sprinkler -.->|WSS| ReviewBot
+    Sprinkler -.->|WSS| Goose
+    Sprinkler -.->|WSS| Slacker
 
-    ReviewBot -->|GitHub API| GH
+    ReviewBot -->|API| GH
+    TurnServer -->|API| GH
 
-    Goose -->|HTTPS API| TurnServer
-    Slacker -->|HTTPS API| TurnServer
-
-    TurnServer -->|GitHub API<br/>on cache miss| GH
+    Goose -->|API| TurnServer
+    Slacker -->|API| TurnServer
+    Dashboard -->|API| TurnServer
 
     Browser -->|HTTPS| Dashboard
-    Dashboard -->|HTTPS API| TurnServer
-
-    Browser -.->|GitHub Search| GH
-    Goose -.->|GitHub Search| GH
-    Slacker -.->|GitHub Search| GH
-
     Slacker -->|Post| Slack
+
+    Browser -.->|Search| GH
+    Goose -.->|Search| GH
+    Slacker -.->|Search| GH
 
     classDef external fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef cloudrun fill:#4285f4,stroke:#1565c0,stroke-width:2px,color:#fff
