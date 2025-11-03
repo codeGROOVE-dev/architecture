@@ -25,10 +25,11 @@ flowchart LR
         ReviewBot["Review-Bot<br/><i>Assignment</i>"]
         Slacker["Slacker<br/><i>Slack Bot</i>"]
         TurnServer["TurnServer<br/><i>Cache & Turn Tracking</i>"]
+        Dashboard["Dashboard<br/><i>Static UI + OAuth</i>"]
     end
 
     subgraph CF["Cloudflare"]
-        Dashboard["Dashboard"]
+        CFProxy["DDoS Protection"]
     end
 
     subgraph Clients["Clients"]
@@ -50,7 +51,8 @@ flowchart LR
     Slacker -->|API| TurnServer
     Browser -->|API| TurnServer
 
-    Browser -->|HTTPS| Dashboard
+    Browser -->|HTTPS| CFProxy
+    CFProxy -->|HTTPS| Dashboard
     Slacker -->|Post| Slack
 
     Browser -.->|Search| GH
@@ -63,8 +65,8 @@ flowchart LR
     classDef client fill:#f1f8e9,stroke:#558b2f,stroke-width:2px
 
     class GH,WHooks,Slack external
-    class Sprinkler,ReviewBot,Slacker,TurnServer cloudrun
-    class Dashboard cloudflare
+    class Sprinkler,ReviewBot,Slacker,TurnServer,Dashboard cloudrun
+    class CFProxy cloudflare
     class Browser,Goose client
 ```
 
@@ -74,7 +76,7 @@ flowchart LR
 - **Review-Bot:** PR analysis and reviewer assignment. WebSocket subscriber. Scores candidates by file expertise and workload. Auth: GitHub App (JWT + installation tokens).
 - **TurnServer:** Turn calculator + PR metadata cache. Two-tier cache (memory + disk, 21 days). Auth: GitHub PAT.
 - **Goose/Slacker:** Notification services (desktop/Slack). Query TurnServer for data.
-- **Dashboard:** Web UI behind Cloudflare. Queries TurnServer.
+- **Dashboard:** Static web UI running on Cloud Run, protected by Cloudflare. Handles GitHub OAuth. Serves JavaScript that queries TurnServer from the browser.
 
 ## Data Flow
 
@@ -148,7 +150,6 @@ flowchart TB
     subgraph TP["Third Party Services"]
         GitHub["GitHub API"]
         Slack["Slack API"]
-        CF["Cloudflare<br/><i>DDoS Protection</i>"]
     end
 
     subgraph OI["Our Infrastructure (Cloud Run)"]
@@ -159,8 +160,12 @@ flowchart TB
         TurnServer["TurnServer<br/><i>Passthrough (validates nothing)</i>"]
     end
 
-    Browser -->|"HTTPS<br/>loads UI"| CF
-    CF -->|HTTPS| Dashboard
+    subgraph CF["Cloudflare"]
+        CFProxy["DDoS Protection"]
+    end
+
+    Browser -->|"HTTPS<br/>loads UI"| CFProxy
+    CFProxy -->|HTTPS| Dashboard
 
     Browser -->|"HTTPS + PAT<br/>(user's GitHub token)"| TurnServer
     Goose -->|"HTTPS + PAT<br/>(gh CLI token)"| TurnServer
@@ -181,10 +186,12 @@ flowchart TB
     classDef user fill:#fff3e0,stroke:#e65100,stroke-width:2px
     classDef third fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
     classDef ours fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef cloudflare fill:#f4511e,stroke:#bf360c,stroke-width:2px,color:#fff
 
     class Browser,Goose user
-    class GitHub,Slack,CF third
+    class GitHub,Slack third
     class Dashboard,Sprinkler,ReviewBot,Slacker,TurnServer ours
+    class CFProxy cloudflare
 ```
 
 **Key Security Properties:**
