@@ -48,7 +48,7 @@ flowchart LR
 
     Goose -->|API| TurnServer
     Slacker -->|API| TurnServer
-    Dashboard -->|API| TurnServer
+    Browser -->|API| TurnServer
 
     Browser -->|HTTPS| Dashboard
     Slacker -->|Post| Slack
@@ -161,7 +161,7 @@ flowchart TB
 
     Browser -->|HTTPS| CF
     CF -->|HTTPS| Dashboard
-    Dashboard -->|PAT| TurnServer
+    Browser -->|PAT| TurnServer
 
     GitHub -->|Webhook| Sprinkler
     Sprinkler -->|WSS+PAT| ReviewBot
