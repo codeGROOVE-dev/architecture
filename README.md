@@ -141,27 +141,30 @@ sequenceDiagram
 **Trust Boundaries & Authentication:**
 
 ```mermaid
-flowchart TB
+flowchart LR
     subgraph UC["User Controlled"]
+        direction TB
         Browser["Browser<br/><i>PAT: GitHub OAuth or user-provided</i>"]
         Goose["Goose<br/><i>PAT: from 'gh' CLI</i>"]
     end
 
-    subgraph TP["Third Party Services"]
-        GitHub["GitHub API"]
-        Slack["Slack API"]
+    subgraph CF["Cloudflare"]
+        CFProxy["DDoS Protection"]
     end
 
     subgraph OI["Our Infrastructure (Cloud Run)"]
+        direction TB
         Dashboard["Dashboard<br/><i>Static UI (OAuth provider)</i>"]
+        TurnServer["TurnServer<br/><i>Passthrough (validates nothing)</i>"]
         Sprinkler["Sprinkler<br/><i>Validates client PATs</i>"]
         ReviewBot["Review-Bot<br/><i>GitHub App JWT</i>"]
         Slacker["Slacker<br/><i>GitHub App JWT</i>"]
-        TurnServer["TurnServer<br/><i>Passthrough (validates nothing)</i>"]
     end
 
-    subgraph CF["Cloudflare"]
-        CFProxy["DDoS Protection"]
+    subgraph TP["Third Party Services"]
+        direction TB
+        GitHub["GitHub API"]
+        Slack["Slack API"]
     end
 
     Browser -->|"HTTPS<br/>loads UI"| CFProxy
