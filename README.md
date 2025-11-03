@@ -188,29 +188,9 @@ flowchart TB
 ```
 
 **Key Security Properties:**
-- **TurnServer**:
-  - Zero-trust passthrough - forwards client PATs directly to GitHub API without validation
-  - Per-PAT caching (token hashed with SHA256) isolates cached GitHub data by user
-  - Aggressive caching (21 days) limits potential for API request laundering
-  - CORS protection restricts browser origins
-  - Request body size limits prevent memory exhaustion DoS
-
-- **Sprinkler**:
-  - Validates GitHub PATs on initial WebSocket connection
-  - Checks org membership via GitHub API (`ValidateOrgMembership`)
-  - Connection rate limiting per IP via `ConnectionLimiter`
-  - Only broadcasts PR URLs - no metadata (clients must fetch with fresh credentials)
-
-- **GitHub Apps** (Review-Bot, Slacker):
-  - Use JWT + installation tokens for enhanced security
-  - Review-Bot: Repo/PRs read+write, Org read
-  - Slacker: Repo/PRs/Checks read-only
-
-- **User PATs**:
-  - Browser: GitHub OAuth or user-provided PAT (user controls token, no risk)
-  - Goose: Uses local `gh` CLI token (user's GitHub identity)
-
-- **Webhook Security**:
-  - HMAC-SHA256 signature verification on all incoming webhooks
-  - Failed verifications logged and dropped
-  - Cloud Run provides rate limiting
+- **Zero-trust design**: TurnServer forwards client PATs to GitHub without validation. Per-PAT caching (SHA256-hashed) isolates data by user.
+- **Webhook integrity**: All GitHub webhooks HMAC-SHA256 verified before processing.
+- **Authentication**: Review-Bot/Slacker use GitHub Apps (JWT + installation tokens). User clients provide their own PATs (OAuth or gh CLI).
+- **Access control**: Sprinkler validates org membership on WebSocket connections. Connection rate limiting per IP.
+- **Data minimization**: Never cache source code. PR metadata only (21 days max). Sprinkler broadcasts URLs only.
+- **DoS protection**: Request body size limits, CORS restrictions, Cloud Run rate limiting, Cloudflare DDoS protection.
