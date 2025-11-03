@@ -2,7 +2,7 @@
 
 ## Overview
 
-Event-driven PR review system running on **Google Cloud Run**. GitHub webhooks flow through Sprinkler's WebSocket broadcast to notification services (Goose, Slacker) and Review-Bot for intelligent reviewer assignment. TurnServer provides turn tracking and caches GitHub metadata. Dashboard served via Cloudflare.
+Event-driven PR review system running on **Google Cloud Run**. GitHub webhooks flow through Sprinkler's WebSocket broadcast to notification services (Goose, Slacker) and Review-Bot for intelligent reviewer assignment. TurnServer provides turn tracking and PR metadata cache. Dashboard served via Cloudflare.
 
 Built with [ko](https://ko.build/) and [Chainguard Images](https://www.chainguard.dev/chainguard-images) for supply chain security.
 
@@ -22,7 +22,7 @@ flowchart TB
         ReviewBot["Review-Bot<br/><i>PR Analysis & Assignment</i>"]
         Goose["Goose<br/><i>Local Notifications</i>"]
         Slacker["Slacker<br/><i>Slack Notifications</i>"]
-        TurnServer["TurnServer<br/><i>Turn Calculator & GitHub Cache</i><br/><small>21-day cache</small>"]
+        TurnServer["TurnServer<br/><i>Turn Calculator & PR Metadata Cache</i><br/><small>21-day cache</small>"]
     end
 
     subgraph CF["Cloudflare Protected"]
@@ -71,7 +71,7 @@ flowchart TB
 
 - **Sprinkler:** Webhook receiver with HMAC-SHA256 verification. Broadcasts via WSS to subscribers. Auth via GitHub PAT.
 - **Review-Bot:** PR analysis and reviewer assignment. WebSocket subscriber. Scores candidates by file expertise and workload. Uses GitHub App (JWT + installation tokens).
-- **TurnServer:** Turn calculator + GitHub cache. Two-tier cache (memory + disk, 21 days). Auth via GitHub PAT.
+- **TurnServer:** Turn calculator + PR metadata cache. Two-tier cache (memory + disk, 21 days). Auth via GitHub PAT.
 - **Goose/Slacker:** Notification services (desktop/Slack). Query TurnServer for data.
 - **Dashboard:** Web UI behind Cloudflare. Queries TurnServer.
 
